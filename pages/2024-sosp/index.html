@@ -19,12 +19,153 @@
     <div class="container">
       <div class="hero">
         <div class="main relative card header">
-          <h1>Verus Tutorial at SOSP 2024</h1>
+          <h1><span class="highlight">Verus Tutorial</span> at SOSP 2024</h1>
+        <!--
+        </div>
+        <div class="main relative card">
+        -->
+          <p class="text">
+            Software verification can prove that 
+            a program will behave correctly for all possible inputs it might receive;
+            hence it provides much stronger guarantees than traditional testing.
+            This tutorial introduces Verus,
+            an open-source, Rust-based verification tool designed specifically for systems software.
+            <span class="highlight">Verus aims to provide efficient proof automation
+            and scale to large, complex systems,
+            and it is developed by a community of academic and industry contributors.</span>
+          </p>
+
+          <p class="text">
+            This tutorial will briefly introduce the state-of-the art in software verification,
+            covering the  benefits and challenges of verification as an engineering methodology, 
+            especially with regards to systems software.
+            It will then introduce Verus's basic features 
+            (without requiring prior knowledge of Rust,
+            other than familiarity with C-like langugages)
+            with a set of interactive exercises.
+            Building on this foundation, 
+            the tutorial will then introduce concepts necessary to verify more complex systems, 
+            such as those relying on complex data structures, network communication, or shared-memory
+            concurrency.
+          <p>
         </div>
         <div class="main relative card">
           <p class="text">
+            <span class="highlight-2">Prerequisites.</span>
+            The tutorial will introduce Verus from the ground up, assuming familiarity with systems programming.
+            Prior knowledge of Rust is not necessary.
+          </p>
 
-          <p>
+          <p class="text">
+            <span class="highlight-2">Morning.</span>
+            The first part of the tutorial will be geared towards systems programmers and researchers with little
+            to no background in verification: we will start from simple Rust programs that the attendees will
+            verify with the help of the organizers, and we will progressively move to more complex examples that
+            introduce the core concepts necessary to get started in systems verification with Verus.
+          </p>
+
+          <p class="text">
+            <span class="highlight-2">Afternoon.</span>
+            In the second half of the day, we will continue by building up to more complex systems, protocols,
+            and verification tasks. This will be done in a way that allows attendees already familiar with verification
+            to get exposure to the more advanced Verus features, such as support for verifying the correctness of
+            programs with shared-memory concurrency, while letting less experienced attendees continue to build up their
+            verification skills on a harder set of exercises.
+          </p>
+        </div>
+        <div class="main relative card">
+          <span class="highlight">Organizers.</span>
+
+          <ul class="organizers">
+            <li>
+              <details>
+                <summary>Andrea Lattuada</summary>
+                <p class="text">
+                Andrea Lattuada is a Systems and Verification Researcher: he is starting as a Research Group Leader
+                at the Max Plank Institute for Software Systems (MPI-SWS) in September 2024
+                Between the beginning of 2023 and the first half of 2024 he was a Researcher in the VMware Research Group.
+                Andrea obtained his PhD in November 2022 in the Systems Group at ETH Zurich, advised by Prof. Timothy Roscoe,
+                and supported in part by a Google PhD fellowship.
+                Andrea has been building verified systems, and extending the available tooling to find and fix inefficiencies.
+                Part of this work received a Distinguished Paper Award for Linear Dafny at OOPSLA.
+                Based on his experience with verified software and tools,
+                he co-started and co-leads the Verus Rust verifier project, involving multiple
+                industry and academic institutions. 
+                Previously Andrea worked on techniques for efficient re-scaling and fault-tolerance for streaming
+                data processing systems (Timely Dataflow, in particular), published at NSDI and VLDB.
+                In addition to talks at academic institutions and conferences, Andrea regularly gives talks on Verus
+                to non-specialist audiences at events like Rust meetups.
+                </p>
+              </details>
+            </li>
+
+            <li>
+              <details>
+                <summary>Bryan Parno</summary>
+                <p class="text">
+                Bryan Parno is the Kavčiċ-Moura Professor of Electrical & Computer
+                Engineering and Computer Science at Carnegie Mellon University.  Bryan's
+                research is primarily focused on investigating long-term, fundamental
+                improvements in how to design and build secure systems.  His dissertation won
+                the 2010 ACM Doctoral Dissertation Award, and in 2011 he was selected for Forbes'
+                30-Under-30 Science List. He formalized and worked to optimize verifiable
+                computation, receiving a Best Paper Award (and later a Test-of-Time Award) at
+                the IEEE Symposium on Security and Privacy for his advances. He coauthored a
+                book on Bootstrapping Trust in Modern Computers, and his work in that area has
+                been incorporated into the latest security enhancements in Intel CPUs. His
+                research into security for new application models was incorporated into Windows
+                and iOS and received Best Paper Awards at the IEEE Symposium on Security and
+                Privacy and the USENIX Symposium on Networked Systems Design and
+                Implementation. He then extended his interest in bootstrapping trust to the
+                problem of building practical, formally verified secure systems, for which he
+                received three Distinguished Paper Awards.  He is also the recipient of the
+                Joel and Ruth Spira Excellence in Teaching Award.
+                </p>
+              </details>
+            </li>
+
+            <li>
+              <details>
+                <summary>Chris Hawblitzel</summary>
+                <p class="text">
+                  Chris Hawblitzel is a Principal Researcher in the Systems Research Group
+                  at Microsoft Research in Redmond, Washington.
+                  His research focuses on using programming language techniques and formal verification
+                  to enforce the safety and security of systems software.
+                  He has worked on projects like the Singularity OS, the Verve verified OS,
+                  the Ironclad/IronFleet verified software stack,
+                  the Vale assembly language verifier for the Everest verified TLS project,
+                  and the Verus Rust verifier.
+                  His papers have received a best paper award for Verve at PLDI,
+                  a CACM research highlight for IronFleet,
+                  and distinguished paper awards for Vale at USENIX Security and for Linear Dafny at OOPSLA.
+                  He received a Ph.D. in computer science from Cornell in 2000
+                  and has been at Microsoft Research since 2005.
+                </p>
+              </details>
+            </li>
+
+            <li>
+              <details>
+                <summary>Travis Hance</summary>
+                <p class="text">
+                  Travis Hance is a PhD Candidate at Carnegie Mellon University advised by Bryan Parno.
+                  He researches formal methods applied to low-level systems software,
+                  and he has verified a number of production-grade low-level systems, including:
+                  VeriBetrKV, a crash-safe key-value store;
+                  a high-performance page cache; a high-performance state replication algorithm; and a memory allocator.
+                  He has a particular interest in Rust, due to its unique combination of features that make it
+                  particularly well-suited for the verification of systems software, and he is a co-developer of Verus,
+                  focusing especially on its support for verified multi-threaded software and low-level libraries.
+                  Before Verus, he developed the IronSync framework in Linear Dafny.
+                  He also works with concurrent separation logic, and he has developed the ``Leaf'' library,
+                  a framework for modular specifications of data structures that involve shared, read-only state.
+
+                </p>
+              </details>
+            </li>
+          </ul>
+
         </div>
       </div>
     </div>

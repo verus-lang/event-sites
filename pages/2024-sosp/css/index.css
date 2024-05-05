@@ -47,10 +47,26 @@ span.name-span {
 }
 p {
   padding: 0px;
-  margin: 5px 0px 0px 0px;
+  margin: 10px 0px 0px 0px;
 }
 span.email {
   color: #555;
+}
+span.highlight {
+  font-weight: bold;
+  background: linear-gradient(90deg, #260, #060, #070, #062);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline;
+}
+span.highlight-2 {
+  font-weight: bold;
+  background: linear-gradient(90deg, #006, #226, #006);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline;
 }
 p:first-child {
   margin-top: 0px;
@@ -83,10 +99,6 @@ div.attribution {
   border-bottom: none;
 }
 
-ul.blog > li.post > div.title {
-  font-weight: bold;
-}
-
 div.main.activity {
   display: none;
 }
@@ -111,3 +123,16 @@ span.comment {
   font-size: 80%;
 }
 
+ul.organizers {
+  list-style-type: none;
+}
+
+ul.organizers > li {
+  margin-bottom: 10px;
+}
+ul.organizers > li:first-child {
+  margin-top: 10px;
+}
+ul.organizers summary {
+  cursor: pointer;
+}
