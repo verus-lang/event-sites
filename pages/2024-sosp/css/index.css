@@ -68,6 +68,9 @@ span.highlight-2 {
   color: transparent;
   display: inline;
 }
+p.highlight-0 {
+  font-weight: bold;
+}
 p:first-child {
   margin-top: 0px;
   
@@ -123,12 +126,17 @@ span.comment {
   font-size: 80%;
 }
 
+li {
+  margin-left: 20px;
+}
+
 ul.organizers {
   list-style-type: none;
 }
 
 ul.organizers > li {
   margin-bottom: 10px;
+  margin-left: 0;
 }
 ul.organizers > li:first-child {
   margin-top: 10px;
@@ -136,3 +144,4 @@ ul.organizers > li:first-child {
 ul.organizers summary {
   cursor: pointer;
 }
+
