@@ -1,3 +1,13 @@
+// Verus tutorial - 'Advanced Topics' Exercise: doubly-linked list
+//
+// This file provides an implementation of a doubly-ended queue implemented
+// as a doubly-linked list. The intent is to illustrate the use of Verus
+// 'memory permissions' to verify a data structure that cannot be expressed
+// through a 'normal' ownership discipline.
+//
+// Most of the implementation has been filled in for you. There are 2 blanks to fill in;
+// search for 'EXERCISE' in this file.
+
 use vstd::prelude::*;
 
 verus! {
@@ -8,6 +18,8 @@ mod doubly_linked_list {
     use vstd::raw_ptr::MemContents;
     use vstd::assert_by_contradiction;
     use super::todo;
+
+    ////// Definition of the core data structures:
 
     // Single node in the list
     struct Node<V> {
@@ -35,6 +47,8 @@ mod doubly_linked_list {
     }
 
     impl<V> DoublyLinkedList<V> {
+        // Main spec definitions of the doubly-linked list
+
         /// Pointer to the node of index (i-1), or None if i is 0.
         spec fn prev_of(&self, i: nat) -> Option<PPtr<Node<V>>> {
             if i == 0 {
@@ -64,8 +78,8 @@ mod doubly_linked_list {
         /// Linked list is well-formed
         pub closed spec fn well_formed(&self) -> bool {
             // Every node from 0 .. len - 1 is well-formed
-            &&& forall|i: nat| 0 <= i && i < self.ghost_state@.ptrs.len() ==> self.well_formed_node(i)
-            &&& if self.ghost_state@.ptrs.len() == 0 {
+            &&& (forall|i: nat| 0 <= i && i < self.ghost_state@.ptrs.len() ==> self.well_formed_node(i))
+            &&& (if self.ghost_state@.ptrs.len() == 0 {
                 // If the list is empty, then the `head` and `tail` pointers are both None
                 self.head.is_none() && self.tail.is_none()
             } else {
@@ -73,7 +87,7 @@ mod doubly_linked_list {
                 // the first and last nodes.
                 &&& self.head == Some(self.ghost_state@.ptrs[0])
                 &&& self.tail == Some(self.ghost_state@.ptrs[self.ghost_state@.ptrs.len() as int - 1])
-            }
+            })
         }
 
         /// Representation of this list as a sequence
@@ -450,11 +464,11 @@ mod doubly_linked_list {
                 if self.ghost_state@.ptrs.len() > 0 {
                     assert(self.well_formed_node(0));
                 }
-                assert(forall|i: nat|
-                    i < self.view().len() && old(self).well_formed_node(i + 1) ==> self.well_formed_node(i));
-                assert forall|i: int| 0 <= i && i < self@.len() implies #[trigger] self@[i] == old(
-                    self,
-                )@.subrange(1, old(self)@.len() as int)[i] by {
+                assert(forall|i: nat| i < self.view().len()
+                    && old(self).well_formed_node(i + 1) ==> self.well_formed_node(i));
+                assert forall|i: int| 0 <= i && i < self@.len()
+                    implies #[trigger] self@[i] == old(self)@.subrange(1, old(self)@.len() as int)[i]
+                by {
                     assert(old(self).well_formed_node(i as nat + 1));  // trigger
                 }
                 assert(self@ =~= old(self)@.subrange(1, old(self)@.len() as int));
@@ -466,7 +480,7 @@ mod doubly_linked_list {
         }
 
         /// Get a reference to the i^th value in the list
-        fn get<'a>(&'a self, i: usize) -> (v: &'a V)
+        pub fn get<'a>(&'a self, i: usize) -> (v: &'a V)
             requires
                 self.well_formed(),
                 0 <= i < self@.len(),
@@ -494,112 +508,37 @@ mod doubly_linked_list {
             todo()
         }
     }
-
-    pub struct Iterator<'a, V> {
-        l: &'a DoublyLinkedList<V>,
-        cur: Option<PPtr<Node<V>>>,
-        index: Ghost<nat>,
-    }
-
-    impl<'a, V> Iterator<'a, V> {
-        pub closed spec fn list(&self) -> &'a DoublyLinkedList<V> {
-            self.l
-        }
-
-        pub closed spec fn index(&self) -> nat {
-            self.index@
-        }
-
-        pub closed spec fn valid(&self) -> bool {
-            &&& self.list().well_formed()
-            &&& self.index@ < self.list()@.len()
-            &&& self.cur.is_some() && self.cur.unwrap() =~= self.l.ghost_state@.ptrs[self.index@ as int]
-        }
-
-        pub fn new(l: &'a DoublyLinkedList<V>) -> (it: Self)
-            requires
-                l.well_formed(),
-                l@.len() > 0,
-            ensures
-                it.valid(),
-                it.index() == 0,
-                it.list() == l,
-        {
-            Iterator { l, cur: l.head, index: Ghost(0) }
-        }
-
-        pub fn value(&self) -> (v: &V)
-            requires
-                self.valid(),
-            ensures
-                v == self.list()@[self.index() as int],
-        {
-            let cur = self.cur.unwrap();
-            assert(self.l.well_formed_node(self.index()));
-            let tracked pointsto = self.l.ghost_state.borrow().points_to_map.tracked_borrow(self.index());
-            let node = cur.borrow(Tracked(pointsto));
-            &node.payload
-        }
-
-        pub fn move_next(&mut self) -> (good: bool)
-            requires
-                old(self).valid(),
-            ensures
-                old(self).list() == self.list(),
-                good == (old(self).index() < old(self).list()@.len() - 1),
-                good ==> (self.valid() && self.index() == old(self).index() + 1),
-        {
-            assert(self.l.well_formed_node(self.index()));
-            let cur = self.cur.unwrap();
-            let tracked pointsto = self.l.ghost_state.borrow().points_to_map.tracked_borrow(self.index());
-            let node = cur.borrow(Tracked(pointsto));
-            proof {
-                self.index@ = self.index@ + 1;
-            }
-            match node.next {
-                None => {
-                    self.cur = None;
-                    false
-                },
-                Some(next_ptr) => {
-                    self.cur = Some(next_ptr);
-                    true
-                },
-            }
-        }
-    }
-
 }
 
+////// Example usage:
+
 mod main {
-    use super::doubly_linked_list::{DoublyLinkedList, Iterator};
+    use super::doubly_linked_list::{DoublyLinkedList};
 
     pub fn run() {
         let mut t = DoublyLinkedList::<u32>::new();
         t.push_back(2);
         t.push_back(3);
         t.push_front(1);  // 1, 2, 3
-        let mut it = Iterator::new(&t);
-        let v1 = it.value();
-        assert(*v1 == 1);
-        let g = it.move_next();
-        let v2 = it.value();
-        assert(*v2 == 2);
-        let _ = it.move_next();
-        let v3 = it.value();
-        assert(*v3 == 3);
-        let g = it.move_next();
-        assert(!g);
+
+        let elem0 = t.get(0);
+        let elem1 = t.get(1);
+        let elem2 = t.get(2);
+        assert(*elem0 == 1);
+        assert(*elem1 == 2);
+        assert(*elem2 == 3);
+
         let x = t.pop_back();  // 3
         let y = t.pop_front();  // 1
         let z = t.pop_front();  // 2
+
         assert(x == 3);
         assert(y == 1);
         assert(z == 2);
     }
-
 }
 
+// Used as a placeholder for the exercises, where necessary
 #[verifier::external_body]
 fn todo<A>() -> A
     requires false
