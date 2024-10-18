@@ -8,6 +8,8 @@
 // Most of the implementation has been filled in for you. There are 2 blanks to fill in;
 // search for 'EXERCISE' in this file.
 
+#![verifier::loop_isolation(false)]
+
 use vstd::prelude::*;
 
 verus! {
@@ -42,8 +44,8 @@ mod doubly_linked_list {
     }
 
     pub tracked struct GhostState<V> {
-        ghost length: nat,
-        tracked points_to_map: Map<nat, PointsTo<Node<V>>>,
+        ghost length: int,
+        tracked points_to_map: Map<int, PointsTo<Node<V>>>,
     }
 
     impl<V> DoublyLinkedList<V> {
@@ -51,11 +53,11 @@ mod doubly_linked_list {
 
         /// The pointer to the i^th node
         spec fn ptr_at(&self, i: int) -> PPtr<Node<V>> {
-            self.ghost_state@.points_to_map[i as nat].pptr()
+            self.ghost_state@.points_to_map[i].pptr()
         }
 
         /// Pointer to the node of index (i-1), or None if i is 0.
-        spec fn prev_of(&self, i: nat) -> Option<PPtr<Node<V>>> {
+        spec fn prev_of(&self, i: int) -> Option<PPtr<Node<V>>> {
             if i == 0 {
                 None
             } else {
@@ -64,7 +66,7 @@ mod doubly_linked_list {
         }
 
         /// Pointer to the node of index (i+1), or None if i is the last index.
-        spec fn next_of(&self, i: nat) -> Option<PPtr<Node<V>>> {
+        spec fn next_of(&self, i: int) -> Option<PPtr<Node<V>>> {
             if i + 1 == self.ghost_state@.length {
                 None
             } else {
@@ -73,16 +75,21 @@ mod doubly_linked_list {
         }
 
         /// Node at index `i` is well-formed
-        spec fn well_formed_node(&self, i: nat) -> bool {
+        spec fn well_formed_node(&self, i: int) -> bool {
             &&& self.ghost_state@.points_to_map.dom().contains(i)
             &&& self.ghost_state@.points_to_map[i].mem_contents() matches MemContents::Init(node)
-                  && node.prev == self.prev_of(i) && node.next == self.next_of(i)
+                  && node.prev == self.prev_of(i)
+                  && node.next == self.next_of(i)
         }
 
         /// Linked list is well-formed
         pub closed spec fn well_formed(&self) -> bool {
+            &&& self.ghost_state@.length >= 0
+            // Every node from 0 .. len - 1 has an entry in the points_to_map
+            &&& (forall|i: int| 0 <= i && i < self.ghost_state@.length ==> self.ghost_state@.points_to_map.dom().contains(i))
             // Every node from 0 .. len - 1 is well-formed
-            &&& (forall|i: nat| 0 <= i && i < self.ghost_state@.length ==> self.well_formed_node(i))
+            &&& (forall|i: int| 0 <= i && i < self.ghost_state@.length ==> self.well_formed_node(i))
+            // Head and tail pointers are correct
             &&& (if self.ghost_state@.length == 0 {
                 // If the list is empty, then the `head` and `tail` pointers are both None
                 self.head.is_none() && self.tail.is_none()
@@ -90,15 +97,15 @@ mod doubly_linked_list {
                 // If the list is non-empty, then `head` and `tail` pointers point to the
                 // the first and last nodes.
                 &&& self.head == Some(self.ptr_at(0))
-                &&& self.tail == Some(self.ptr_at(self.ghost_state@.length as int - 1))
+                &&& self.tail == Some(self.ptr_at(self.ghost_state@.length - 1))
             })
         }
 
         /// Representation of this list as a sequence
         pub closed spec fn view(&self) -> Seq<V> {
             Seq::<V>::new(
-                self.ghost_state@.length,
-                |i: int| { self.ghost_state@.points_to_map[i as nat].value().payload },
+                self.ghost_state@.length as nat,
+                |i: int| { self.ghost_state@.points_to_map[i].value().payload },
             )
         }
 
@@ -176,14 +183,14 @@ mod doubly_linked_list {
                         // Show that the `self.tail == None` implies the list is empty
                         assert_by_contradiction!(self.ghost_state@.length == 0,
                         {
-                            assert(self.well_formed_node((self.ghost_state@.length - 1) as nat)); // trigger
+                            assert(self.well_formed_node(self.ghost_state@.length)); // trigger
                         });
                     }
                     self.insert_node_into_empty_list(v);
                 }
                 Some(old_tail_ptr) => {
                     proof {
-                        assert(self.well_formed_node((self.ghost_state@.length - 1) as nat)); // trigger
+                        assert(self.well_formed_node(self.ghost_state@.length - 1)); // trigger
                     }
 
                     // Allocate a new node to go on the end. It's 'prev' field points
@@ -195,13 +202,13 @@ mod doubly_linked_list {
                     // Update the 'next' pointer of the previous tail node
                     // This is all equivalent to `(*old_tail_ptr).next = new_tail_ptr;`
                     let tracked mut old_tail_pointsto: PointsTo<Node<V>> =
-                        self.ghost_state.borrow_mut().points_to_map.tracked_remove((self.ghost_state@.length - 1) as nat);
+                        self.ghost_state.borrow_mut().points_to_map.tracked_remove(self.ghost_state@.length - 1);
                     let mut old_tail_node = old_tail_ptr.take(Tracked(&mut old_tail_pointsto));
                     old_tail_node.next = Some(new_tail_ptr);
                     old_tail_ptr.put(Tracked(&mut old_tail_pointsto), old_tail_node);
                     proof {
                         self.ghost_state.borrow_mut().points_to_map.tracked_insert(
-                            (self.ghost_state@.length - 1) as nat,
+                            self.ghost_state@.length - 1,
                             old_tail_pointsto,
                         );
                     }
@@ -216,14 +223,18 @@ mod doubly_linked_list {
 
                         // Additional proof work to help the solver show that
                         // `self.well_formed()` has been restored.
-                        assert(self.well_formed_node((self.ghost_state@.length - 2) as nat));
-                        assert(self.well_formed_node((self.ghost_state@.length - 1) as nat));
-                        assert(forall|i: nat| i < self.ghost_state@.length && old(self).well_formed_node(i)
+                        if self.ghost_state@.length >= 3 {
+                            assert(self.ptr_at(self.ghost_state@.length - 3)
+                                == old(self).ptr_at(self.ghost_state@.length - 3));
+                        }
+                        assert(self.well_formed_node(self.ghost_state@.length - 2));
+                        assert(self.well_formed_node(self.ghost_state@.length - 1));
+                        assert(forall|i: int| 0 <= i < self.ghost_state@.length && old(self).well_formed_node(i)
                             ==> self.well_formed_node(i));
                         assert forall|i: int| 0 <= i && i < self.ghost_state@.length as int - 1
                             implies old(self)@[i] == self@[i]
                         by {
-                            assert(old(self).well_formed_node(i as nat));  // trigger
+                            assert(old(self).well_formed_node(i));  // trigger
                         }
                         assert(self@ =~= old(self)@.push(v));
 
@@ -243,13 +254,13 @@ mod doubly_linked_list {
                 self@ == old(self)@.drop_last(),
                 v == old(self)@[old(self)@.len() as int - 1],
         {
-            assert(self.well_formed_node((self.ghost_state@.length - 1) as nat));
+            assert(self.well_formed_node(self.ghost_state@.length - 1));
 
             // Deallocate the last node in the list and get the payload.
             // Note self.tail.unwrap() will always succeed because of the precondition `len > 0`
             let last_ptr = self.tail.unwrap();
             let tracked last_pointsto = self.ghost_state.borrow_mut().points_to_map.tracked_remove(
-                (self.ghost_state@.length - 1) as nat,
+                self.ghost_state@.length - 1,
             );
             let last_node = last_ptr.into_inner(Tracked(last_pointsto));
             let v = last_node.payload;
@@ -263,13 +274,13 @@ mod doubly_linked_list {
                     proof {
                         assert_by_contradiction!(self.ghost_state@.length == 1,
                         {
-                            assert(old(self).well_formed_node((self.ghost_state@.length - 2) as nat)); // trigger
+                            assert(old(self).well_formed_node(self.ghost_state@.length - 2)); // trigger
                         });
                     }
                 },
                 Some(penultimate_ptr) => {
                     assert(old(self)@.len() >= 2);
-                    assert(old(self).well_formed_node((self.ghost_state@.length - 2) as nat));
+                    assert(old(self).well_formed_node(self.ghost_state@.length - 2));
 
                     // Otherwise, we need to set the 'tail' pointer to the (new) tail pointer,
                     // i.e., the pointer that was previously the second-to-last pointer.
@@ -277,13 +288,13 @@ mod doubly_linked_list {
 
                     // And we need to set the 'next' pointer of the new tail node to None.
                     let tracked mut penultimate_pointsto =
-                        self.ghost_state.borrow_mut().points_to_map.tracked_remove((self.ghost_state@.length - 2) as nat);
+                        self.ghost_state.borrow_mut().points_to_map.tracked_remove(self.ghost_state@.length - 2);
                     let mut penultimate_node = penultimate_ptr.take(Tracked(&mut penultimate_pointsto));
                     penultimate_node.next = None;
                     penultimate_ptr.put(Tracked(&mut penultimate_pointsto), penultimate_node);
                     proof {
                         self.ghost_state.borrow_mut().points_to_map.tracked_insert(
-                            (self.ghost_state@.length - 2) as nat,
+                            self.ghost_state@.length - 2,
                             penultimate_pointsto,
                         );
                     }
@@ -293,15 +304,13 @@ mod doubly_linked_list {
             // Additional proof work to help the solver show that
             // `self.well_formed()` has been restored.
             proof {
-                self.ghost_state@.length = (self.ghost_state@.length - 1) as nat;
+                self.ghost_state@.length = self.ghost_state@.length - 1;
                 if self.ghost_state@.length > 0 {
-                    assert(self.well_formed_node((self.ghost_state@.length - 1) as nat));
+                    assert(self.well_formed_node(self.ghost_state@.length - 1));
                 }
-                assert(forall|i: nat| i < self@.len() && old(self).well_formed_node(i) ==> self.well_formed_node(i));
-                assert forall|i: int| 0 <= i && i < self@.len() implies #[trigger] self@[i] == old(
-                    self,
-                )@.drop_last()[i] by {
-                    assert(old(self).well_formed_node(i as nat));  // trigger
+                assert(forall|i: int| 0 <= i < self@.len() && old(self).well_formed_node(i) ==> self.well_formed_node(i));
+                assert forall|i: int| 0 <= i && i < self@.len() implies #[trigger] self@[i] == old(self)@.drop_last()[i] by {
+                    assert(old(self).well_formed_node(i));  // trigger
                 }
                 assert(self@ =~= old(self)@.drop_last());
 
@@ -325,7 +334,7 @@ mod doubly_linked_list {
                     proof {
                         // Show that the `self.head == None` implies the list is empty
                         assert_by_contradiction!(self.ghost_state@.length == 0, {
-                            assert(self.well_formed_node((self.ghost_state@.length - 1) as nat));
+                            assert(self.well_formed_node((self.ghost_state@.length - 1)));
                         });
                     }
                     self.insert_node_into_empty_list(v);
@@ -360,16 +369,16 @@ mod doubly_linked_list {
                     proof {
                         // Put the new head's PointsTo into the map.
                         // This goes in at index 0, so we have to shift all the keys up by 1.
-                        assert forall|j: nat|
+                        assert forall|j: int|
                             0 <= j && j < old(self)@.len() implies self.ghost_state@.points_to_map.dom().contains(
                             j,
                         ) by {
                             assert(old(self).well_formed_node(j));
                         }
                         self.ghost_state.borrow_mut().points_to_map.tracked_map_keys_in_place(
-                            Map::<nat, nat>::new(
-                                |j: nat| 1 <= j && j <= old(self).view().len(),
-                                |j: nat| (j - 1) as nat,
+                            Map::<int, int>::new(
+                                |j: int| 1 <= j && j <= old(self).view().len(),
+                                |j: int| j - 1,
                             ),
                         );
                         self.ghost_state.borrow_mut().points_to_map.tracked_insert(0, new_head_pointsto);
@@ -379,13 +388,13 @@ mod doubly_linked_list {
                         // `self.well_formed()` has been restored.
                         assert(self.well_formed_node(0));
                         assert(self.well_formed_node(1));
-                        assert(forall|i: nat|
-                            1 <= i && i <= old(self).ghost_state@.length && old(self).well_formed_node((i - 1) as nat)
+                        assert(forall|i: int|
+                            1 <= i && i <= old(self).ghost_state@.length && old(self).well_formed_node(i - 1)
                                 ==> #[trigger] self.well_formed_node(i));
                         assert forall|i: int| 1 <= i && i <= self.ghost_state@.length as int - 1
                             implies old(self)@[i - 1] == self@[i]
                         by {
-                            assert(old(self).well_formed_node((i - 1) as nat));  // trigger
+                            assert(old(self).well_formed_node(i - 1));  // trigger
                         }
                         assert(self@ =~= seq![v].add(old(self)@));
 
@@ -445,16 +454,16 @@ mod doubly_linked_list {
 
                         // Since we removed index 0, we need to shift all the keys down,
                         // 1 -> 0, 2 -> 1, etc.
-                        assert forall|j: nat|
+                        assert forall |j: int|
                             1 <= j && j < old(self)@.len() implies self.ghost_state@.points_to_map.dom().contains(
                             j,
                         ) by {
                             assert(old(self).well_formed_node(j));
                         };
                         self.ghost_state.borrow_mut().points_to_map.tracked_map_keys_in_place(
-                            Map::<nat, nat>::new(
-                                |j: nat| 0 <= j && j < old(self).view().len() - 1,
-                                |j: nat| (j + 1) as nat,
+                            Map::<int, int>::new(
+                                |j: int| 0 <= j && j < old(self).view().len() - 1,
+                                |j: int| j + 1,
                             ),
                         );
                     }
@@ -464,16 +473,16 @@ mod doubly_linked_list {
             // Additional proof work to help the solver show that
             // `self.well_formed()` has been restored.
             proof {
-                self.ghost_state@.length = (self.ghost_state@.length - 1) as nat;
+                self.ghost_state@.length = self.ghost_state@.length - 1;
                 if self.ghost_state@.length > 0 {
                     assert(self.well_formed_node(0));
                 }
-                assert(forall|i: nat| i < self.view().len()
+                assert(forall|i: int| 0 <= i < self.view().len()
                     && old(self).well_formed_node(i + 1) ==> self.well_formed_node(i));
                 assert forall|i: int| 0 <= i && i < self@.len()
                     implies #[trigger] self@[i] == old(self)@.subrange(1, old(self)@.len() as int)[i]
                 by {
-                    assert(old(self).well_formed_node(i as nat + 1));  // trigger
+                    assert(old(self).well_formed_node(i + 1));  // trigger
                 }
                 assert(self@ =~= old(self)@.subrange(1, old(self)@.len() as int));
 
