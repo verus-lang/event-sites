@@ -76,12 +76,14 @@ mod doubly_linked_list {
         spec fn well_formed_node(&self, i: nat) -> bool {
             &&& self.ghost_state@.points_to_map.dom().contains(i)
             &&& self.ghost_state@.points_to_map[i].mem_contents() matches MemContents::Init(node)
-                  && node.prev == self.prev_of(i) && node.next == self.next_of(i)
+                  && node.prev == self.prev_of(i)
+                  && node.next == self.next_of(i)
         }
 
         /// Linked list is well-formed
         pub closed spec fn well_formed(&self) -> bool {
             // Every node from 0 .. len - 1 is well-formed
+            &&& (forall|i: nat| 0 <= i && i < self.ghost_state@.length ==> self.ghost_state@.points_to_map.dom().contains(i))
             &&& (forall|i: nat| 0 <= i && i < self.ghost_state@.length ==> self.well_formed_node(i))
             &&& (if self.ghost_state@.length == 0 {
                 // If the list is empty, then the `head` and `tail` pointers are both None
@@ -129,6 +131,19 @@ mod doubly_linked_list {
                 self.well_formed(),
                 self@ =~= old(self)@.push(v),
         {
+            let (ptr, Tracked(points_to)) = PPtr::<Node<V>>::new(
+                Node::<V> { prev: None, next: None, payload: v },
+            );
+            self.tail = Some(ptr);
+            self.head = Some(ptr);
+            proof {
+                self.ghost_state.borrow_mut().length = 1;
+                self.ghost_state.borrow_mut().points_to_map.tracked_insert(
+                    (self.ghost_state@.length - 1) as nat,
+                    points_to,
+                );
+            }
+
             // EXERCISE 1. Implement `insert_node_into_empty_list`.
 
             // Step 1. Allocate a fresh node.
@@ -216,6 +231,12 @@ mod doubly_linked_list {
 
                         // Additional proof work to help the solver show that
                         // `self.well_formed()` has been restored.
+                        if self.ghost_state@.length >= 3 {
+                            assert(self.ptr_at(self.ghost_state@.length - 3)
+                                == old(self).ptr_at(self.ghost_state@.length - 3));
+                        }
+                        //assert(self.points_to_map[(self.ghost_state@.length - 2) as nat].mem_contents().value().prev
+                            //== Some(self.ptr_at((self.ghost_state@.length - 3) as int)));
                         assert(self.well_formed_node((self.ghost_state@.length - 2) as nat));
                         assert(self.well_formed_node((self.ghost_state@.length - 1) as nat));
                         assert(forall|i: nat| i < self.ghost_state@.length && old(self).well_formed_node(i)
@@ -509,7 +530,39 @@ mod doubly_linked_list {
             //    - https://verus-lang.github.io/verus/verusdoc/vstd/simple_pptr/struct.PPtr.html
             //    - https://verus-lang.github.io/verus/verusdoc/vstd/map/struct.Map.html
 
-            todo()
+            // Iterate the nodes from 0 to j, starting at the head node
+            let mut j = 0;
+            let mut ptr = self.head.unwrap();
+            while j < i
+                invariant
+                    self.well_formed(),
+                    0 <= j <= i < self@.len(),
+                    ptr == self.ptr_at(j as int),
+            {
+                proof {
+                    assert(self.well_formed_node(j as nat)); // trigger
+                }
+
+                // Get the next node from the 'next' field
+                let tracked pointsto_ref: &PointsTo<Node<V>> =
+                    self.ghost_state.borrow().points_to_map.tracked_borrow(j as nat);
+                let node_ref: &Node<V> = ptr.borrow(Tracked(pointsto_ref));
+                let next_ptr = node_ref.next.unwrap();
+
+                j += 1;
+                ptr = next_ptr;
+            }
+
+            proof {
+                assert(self.well_formed_node(j as nat)); // trigger
+            }
+
+            // Get a reference to this node's payload and return it
+            let tracked pointsto_ref: &PointsTo<Node<V>> =
+                self.ghost_state.borrow().points_to_map.tracked_borrow(j as nat);
+            let node_ref: &Node<V> = ptr.borrow(Tracked(pointsto_ref));
+            return &node_ref.payload;
+
         }
     }
 }
