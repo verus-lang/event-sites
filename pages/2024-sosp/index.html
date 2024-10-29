@@ -104,9 +104,13 @@
           <p class="highlight-0">Afternoon Program (tentative):</p>
             <ul>
               <li>How to debug a failing proof;</li>
-              <li>Verifying code with unsafe pointers (with hands-on exercise);</li>
-              <li>Primer on Verus's mode system (for specification, proof, and executable code);</li>
-              <li>Verifying shared-memory concurrent code with VerusSync (with hands-on exercise);</li>
+              <li>Applying Verus to more advanced programming disciplines in Rust, with hands-on exercises, including:
+                <ul>
+                  <li>Verifying code with "unsafe" code, e.g., code with raw pointers</li>
+                  <li>Verifying code with <a href="https://doc.rust-lang.org/book/ch15-05-interior-mutability.html">interior mutability</a></li>
+                  <li>Verifying concurrent code</li>
+                </ul>
+              </li>
               <li>Open Q&amp;A, one-on-one consulting with the organizers on exercises and further verification projects.</li>
             </ul>
           </p>
@@ -187,7 +191,9 @@
               <details>
                 <summary>Travis Hance</summary>
                 <p class="text">
-                  Travis Hance is a PhD Candidate at Carnegie Mellon University advised by Bryan Parno.
+                  Travis Hance is a recent PhD graduate from Carnegie Mellon University advised by Bryan Parno,
+                  and he will soon start as a postdoctoral researcher
+                  at the Max Plank Institute for Software Systems (MPI-SWS).
                   He researches formal methods applied to low-level systems software,
                   and he has verified a number of production-grade low-level systems, including:
                   VeriBetrKV, a crash-safe key-value store;
@@ -198,7 +204,6 @@
                   Before Verus, he developed the IronSync framework in Linear Dafny.
                   He also works with concurrent separation logic, and he has developed the ``Leaf'' library,
                   a framework for modular specifications of data structures that involve shared, read-only state.
-
                 </p>
               </details>
             </li>
