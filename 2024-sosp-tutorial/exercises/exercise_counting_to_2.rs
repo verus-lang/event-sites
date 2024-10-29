@@ -129,7 +129,7 @@ tokenized_state_machine!(
         pub fn the_invariant(&self) -> bool {
             // EXERCISE: supply an appropriate invariant to show this VerusSync system
             // is well-formed.
-            self.counter == (if self.inc_a { 1 as int } else { 0 }) + (if self.inc_b { 1 as int } else { 0 })
+            true
         }
 
         // In general, proof bodies for the inductiveness proofs go here.
@@ -279,34 +279,6 @@ fn main() {
                 //  - Update ghost state as appropriate
                 //  - Release the lock
 
-                // Our closure captures a few variables: shared_lock2, which gives
-                // us access to the lock, and the `inc_b_token`, which gives us
-                // the 'right' to perform one increment operation.
-                let tracked mut token = inc_b_token;
-                let lock: &RwLock<_, _> = &*shared_lock2;
-
-                // Take the lock
-                let (mut lock_interior, lock_handle) = lock.acquire_write();
-
-                // Ghost increment
-                proof {
-                    // Prove that the increment operation won't overflow the u32.
-                    instance.increment_will_not_overflow_u32(
-                        &*lock_interior.ghost_counter.borrow());
-
-                    // Update the token values
-                    instance.tr_inc_b(
-                        &mut *lock_interior.ghost_counter.borrow_mut(),
-                        &mut token);
-                }
-
-                // Physical increment
-                lock_interior.counter = lock_interior.counter + 1;
-
-                // Release lock
-                lock_handle.release_write(lock_interior);
-
-                Tracked(token)
             }
         )
     );
@@ -346,12 +318,6 @@ fn main() {
     let final_value = readonly_lock_interior.counter;
 
     proof {
-        instance.finalize(
-            &*readonly_lock_interior.ghost_counter.borrow(),
-            &inc_a_token,
-            &inc_b_token,
-        );
-
         // EXERCISE: Prove that assertion holds.
         // Hint: There is one property from the VerusSync system that hasn't been used yet!
 
