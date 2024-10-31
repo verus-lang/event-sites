@@ -31,7 +31,7 @@ fn main() {
     read_handle_odd.release_read();
 
     let (even_value, write_handle_even) = lock_even.acquire_write();
-    write_handle_even.release_write(7);
+    write_handle_even.release_write(7); // ERROR: invariant violated
 }
 
 }
