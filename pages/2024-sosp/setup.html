@@ -1,0 +1,68 @@
+---
+---
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Verus Tutorial</title>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,600" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="css/base.css" />
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  </head>
+  <body>
+    <div class="base_header">
+      <div></div>
+    </div>
+    <div class="container">
+      <div class="hero">
+        <div class="main relative card header">
+          <h1><a href="index.html"><span class="highlight-2">Tutorial</span>: Verifying Rust code with <span class="highlight">Verus</span></a></h1>
+          <p class="text">
+            Sunday, November 3, 2024 (Austin, TX).
+          </p>
+
+          <p>
+            <span class="highlight">Verus set-up instructions</span>
+          </p>
+
+        </div>
+        <div class="main relative card">
+          <h3>Setting up Verus</h3>
+
+          <p>Verus is under active development, with rolling releases. To ensure that all attendees get a consistent experience we will be using a separate release for the tutorial.<br />
+There are two options, listed below: setting up Verus natively (which requires installing rust on your system) or running Verus in an `x86_64` Docker container.</p>
+
+          <h4>Option A: Download Verus release and install rust toolchain (if necessary)</h4>
+
+          <p>To get Verus, download the relevant package from this release page:&nbsp;<a href="https://github.com/verus-lang/verus/releases/tag/release%2F0.2024.10.31.141c73e">https://github.com/verus-lang/verus/releases/tag/release%2F0.2024.10.31.141c73e</a></p>
+
+          <p>If you&#39;re on MacOS the binaries and libraries will be quarantined by Gatekeeper, which will pop up a number of messages about running software downloaded from the internet. To avoid this issue, once you have unpacked the `zip` file, open a shell in the newly unzipped directory and run `bash macos_allow_gatekeeper.sh`, which will remove the Gatekeeper quarantine flag from all the relevant files (you can inspect the file first, if you&#39;d like, it only makes changes inside the directory you just unpacked).</p>
+
+          <p>You can then run Verus with <code>./verus</code>&nbsp;(or <code>.\verus.exe</code>&nbsp;on Windows). If you already have `rustup` installed, `verus` will instruct you on how to install the necessary rust toolchain (1.79.0). If you don&#39;t have `rustup` installed, `verus` will instruct you on how to install it, and the necessary rust toolchain (1.79.0). <a href="https://rustup.rs">`rustup`</a> is Rust&#39;s installer.</p>
+
+          <h4>Option B: Use Verus via Docker</h4>
+
+          <p>If you have a machine that can run Linux `x86_64` docker containers, you can also use a docker image we&#39;ve prepared for the tutorial to run `verus` without having to install any dependencies separately.</p>
+
+          <p>From the directory that contains the files you want to verify (e.g. a file named `fibo.rs`), run:</p>
+
+          <p><code>docker run -it --rm -v .:/root/cwd ghcr.io/verus-lang/verus verus fibo.rs</code></p>
+
+          <p>This will download the Verus container and mount the current folder as <code>/root/cwd</code>&nbsp; which corresponds to the working directory inside the container and will let Verus find the file `fibo.rs` in this case.</p>
+
+        </div>
+        <div class="main relative card">
+
+          <h3>Verus Standard Library (vstd) documentation</h3>
+
+          <p>The Verus Standard Library documentation is accessible at:&nbsp;<a href="https://verus-lang.github.io/verus/verusdoc/vstd/">https://principled-systems.github.io/verus/verusdoc/vstd/</a></p>
+
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

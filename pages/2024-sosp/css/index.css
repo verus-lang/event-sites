@@ -122,6 +122,11 @@ div.main > h3.small-h3 {
   line-height: 100%;
 }
 
+div.main > h4 {
+  margin-top: 20px;
+  padding-bottom: 10px;
+}
+
 span.comment {
   font-size: 80%;
 }
