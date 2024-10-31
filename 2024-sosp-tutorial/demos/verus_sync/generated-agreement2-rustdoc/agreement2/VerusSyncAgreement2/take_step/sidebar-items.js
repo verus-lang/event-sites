@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["initialize","update_both"]};
