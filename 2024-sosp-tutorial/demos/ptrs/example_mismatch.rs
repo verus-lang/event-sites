@@ -10,16 +10,16 @@ verus!{
 fn main() {
     unsafe {
         // ALLOCATE p
-        let (p, Tracked(mut perm_p)) = PPtr::<u64>::empty();
+        let (p, Tracked(mut points_to_p)) = PPtr::<u64>::empty();
 
         // ALLOCATE q
-        let (q, Tracked(mut perm_q)) = PPtr::<u64>::empty();
+        let (q, Tracked(mut points_to_q)) = PPtr::<u64>::empty();
 
         // DEALLOCATE p
-        p.free(Tracked(perm_p));
+        p.free(Tracked(points_to_p));
 
         // READ-AFTER-FREE (read from p, try to use q's permission object)
-        let x = p.read(Tracked(&mut perm_q)); 
+        let x = p.read(Tracked(&mut points_to_q)); 
     }
 }
 

@@ -13,6 +13,8 @@ fn main() {
         // p: PPtr<u64>, points_to: PointsTo<u64>
         let (p, Tracked(mut points_to)) = PPtr::<u64>::empty();
 
+        let p2 = p; // pointers are freely copyable
+
         // Equivalent to:
         // unsafe { *p = 5; }
         p.write(Tracked(&mut points_to), 5); 

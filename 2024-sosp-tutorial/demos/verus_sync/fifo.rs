@@ -9,10 +9,9 @@ use vstd::multiset::*;
 use vstd::prelude::*;
 use vstd::seq::*;
 use vstd::{pervasive::*, prelude::*, *};
+use state_machines_macros::tokenized_state_machine;
 
 verus! {
-
-use state_machines_macros::tokenized_state_machine;
 
 #[is_variant]
 pub enum ProducerState {

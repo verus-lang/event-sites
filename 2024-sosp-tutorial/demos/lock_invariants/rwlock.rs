@@ -25,8 +25,8 @@ fn main() {
 
         // We can use the lock invariant to check the value is even
         let read_handle1 = lock.acquire_read();
-        let val1 = *read_handle1.borrow();
-        assert(val1 % 2 == 0);
+        let val1: &u64 = read_handle1.borrow();
+        assert(*val1 % 2 == 0);
 
         // If we acquire a second read-lock, we can confirm each handle
         // reads the same value:
@@ -47,9 +47,9 @@ fn main() {
         let lock: &RwLock::<u64, _> = &*shared_lock2;
 
         // We can add 2 to the lock (this preserves evenness)
-        let (val, write_handle) = lock.acquire_write();
-        let new_val = val.wrapping_add(2);
-        write_handle.release_write(new_val);
+        let (mut val, write_handle) = lock.acquire_write();
+        val = val.wrapping_add(2);
+        write_handle.release_write(val);
     });
 
     // Thread 3 -- THE EVIL THREAD >:(
