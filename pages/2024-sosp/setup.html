@@ -57,7 +57,12 @@ There are two options, listed below: setting up Verus natively (which requires i
         <div class="main relative card">
           <h3>Verifying your first program</h3>
 
-          <p>To check that Verus is properly installed, please download <a href="assets/fibo.rs" download>fibo.rs</a> and run Verus on it with <code>./verus path/to/fibo.rs</code> (or <code>.\verus.exe path\to\fibo.rs</code> on Windows).</p>
+          <p>To check that Verus is properly installed, please download <a href="assets/fibo.rs" download>fibo.rs</a> and run Verus on it.</p>
+
+          <p>If you set up Verus with Option A, you can verify the fibo.rs example with <code>./verus path/to/fibo.rs</code> (or <code>.\verus.exe path\to\fibo.rs</code> on Windows).</p>
+
+          <p>If you set up Verus with Option B, make sure that <code>fibo.rs</code> is in the current working directory, and then you can verify it with<br/>
+          <code>docker run -it --rm -v .:/root/cwd ghcr.io/verus-lang/verus verus fibo.rs</code>.</p>
 
           <p>You should get the following output:<br/>
           <code>verification results:: 4 verified, 0 errors</code>
