@@ -8,7 +8,7 @@ struct Point {
 impl Point {
   fn move_x(self, dx: i64) -> (r: Point)
     requires i64::MIN <= self.x + dx < i64::MAX,
-    ensures r == self
+    ensures r == self // <- change this
   {
     Point { x: self.x + dx }
   }
