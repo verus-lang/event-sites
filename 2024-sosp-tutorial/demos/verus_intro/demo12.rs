@@ -1,3 +1,5 @@
+// vim: set filetype=verus laststatus=0:
+
 use vstd::prelude::*;
 verus! {
 
@@ -41,6 +43,7 @@ struct TextAlign {
 }
 
 spec fn top_left(ta: TextAlign) -> bool {
+  // -> point out &&&
   &&& ta.v_align == VAlign::Top
   &&& ta.h_align == HAlign::Left
 }

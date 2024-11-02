@@ -1,3 +1,5 @@
+// vim: set filetype=verus laststatus=0:
+
 use vstd::prelude::*;
 verus! {
 
@@ -28,10 +30,12 @@ spec fn top_left(ta: TextAlign) -> bool {
 proof fn top_and_left(ta: TextAlign)
   requires
     ta.v_align == VAlign::Top,
-    ta.h_align == HAlign::Left,
+    /*+*/ ta.h_align == HAlign::Left,
   ensures
     top_left(ta),
 {
+  //+- assert(ta.v_align == VAlign::Top);
+  //+- assert(ta.h_align == HAlign::Left);
 }
 
 } // verus!
