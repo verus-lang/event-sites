@@ -25,6 +25,9 @@ fn smallest_elt(elts: Vec<u64>) -> (result: u64)
 }
 
 fn main() {
+    let v = vec![3,1,2];
+    let e = smallest_elt(v);
+    assert(e == 1);
 }
 
 }
