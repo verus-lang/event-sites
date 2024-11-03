@@ -137,17 +137,17 @@ tokenized_state_machine!(
 
         #[inductive(tr_inc_a)]
         fn tr_inc_a_preserves_the_invariant(pre: Self, post: Self) {
-            /* proof here */
+            /* You can leave this empty */
         }
 
         #[inductive(tr_inc_b)]
         fn tr_inc_b_preserves_the_invariant(pre: Self, post: Self) {
-            /* proof here */
+            /* You can leave this empty */
         }
 
         #[inductive(initialize)]
         fn initial_state_satisfies_inv(post: Self) {
-            /* proof here */
+            /* You can leave this empty */
         }
     }
 );

@@ -11,6 +11,7 @@ use vstd::rwlock::{RwLock, RwLockPredicate};
 use vstd::hash_map::HashMapWithView;
 use std::sync::Arc;
 
+#[path = "../memoization_exercise_internals.rs"]
 mod memoization_exercise_internals;
 
 verus!{
@@ -123,7 +124,7 @@ fn todo<A>() -> A
 //
 // 1. Make `Memoizer` generic over Args, Output, and the computation.
 //
-// 2. The current locking scheme is very coarse-grained. Come up with (and implement) and more
-//    fine-grained scheme.
+// 2. The current locking scheme is very coarse-grained. Come up with (and implement) a more
+//    fine-grained locking scheme to reduce thread contention.
 
 }
