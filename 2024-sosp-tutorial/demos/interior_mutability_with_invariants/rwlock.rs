@@ -13,38 +13,16 @@ fn main() {
         // Lock invariant: number must be even
         Ghost(|v: u64| v % 2 == 0)
     );
+
     // Put the lock in an Arc; we can clone the Arc to share it
     // between threads.
     let shared_lock = Arc::new(lock);
 
-    // Thread 1
+    // Thread 1 - take a write lock
 
     let shared_lock1 = shared_lock.clone();
     spawn(move || {
         let lock: &RwLock::<u64, _> = &*shared_lock1;
-
-        // We can use the lock invariant to check the value is even
-        let read_handle1 = lock.acquire_read();
-        let val1: &u64 = read_handle1.borrow();
-        assert(*val1 % 2 == 0);
-
-        // If we acquire a second read-lock, we can confirm each handle
-        // reads the same value:
-        let read_handle2 = lock.acquire_read();
-        let val2 = *read_handle2.borrow();
-
-        proof { ReadHandle::lemma_readers_match(&read_handle1, &read_handle2); }
-        assert(val1 == val2);
-
-        read_handle1.release_read();
-        read_handle2.release_read();
-    });
-
-    // Thread 2
-
-    let shared_lock2 = shared_lock.clone();
-    spawn(move || {
-        let lock: &RwLock::<u64, _> = &*shared_lock2;
 
         // We can add 2 to the lock (this preserves evenness)
         let (mut val, write_handle) = lock.acquire_write();
@@ -52,15 +30,17 @@ fn main() {
         write_handle.release_write(val);
     });
 
-    // Thread 3 -- THE EVIL THREAD >:(
+    // Thread 2 - take a read lock
 
-    let shared_lock3 = shared_lock.clone();
+    let shared_lock2 = shared_lock.clone();
     spawn(move || {
-        let lock: &RwLock::<u64, _> = &*shared_lock3;
+        let lock: &RwLock::<u64, _> = &*shared_lock2;
 
-        let (val, write_handle) = lock.acquire_write();
-        let new_val = 13; // 13 isn't even!
-        write_handle.release_write(new_val); // ERROR: invariant violated
+        // We can use the lock invariant to check the value is even
+        let read_handle = lock.acquire_read();
+        let val1: &u64 = read_handle.borrow();
+        assert(*val1 % 2 == 0);
+        read_handle.release_read();
     });
 }
 
