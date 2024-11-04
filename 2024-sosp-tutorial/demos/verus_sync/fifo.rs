@@ -53,118 +53,7 @@ tokenized_state_machine!{FifoQueue<T> {
         pub consumer: ConsumerState,
     }
 
-    pub open spec fn len(&self) -> nat {
-        self.backing_cells.len()
-    }
-
-    pub open spec fn inc_wrap(i: nat, len: nat) -> nat {
-        if i + 1 == len { 0 } else { i + 1 }
-    }
-
-    // Make sure the producer state and the consumer state aren't inconsistent.
-
-    #[invariant]
-    pub fn not_overlapping(&self) -> bool {
-        match (self.producer, self.consumer) {
-            (ProducerState::Producing(tail), ConsumerState::Idle(head)) => {
-                Self::inc_wrap(tail, self.len()) != head
-            }
-            (ProducerState::Producing(tail), ConsumerState::Consuming(head)) => {
-                head != tail
-                && Self::inc_wrap(tail, self.len()) != head
-            }
-            (ProducerState::Idle(tail), ConsumerState::Idle(head)) => {
-                true
-            }
-            (ProducerState::Idle(tail), ConsumerState::Consuming(head)) => {
-                head != tail
-            }
-        }
-    }
-
-    // `head` and `tail` are in-bounds
-    // shared `head` and `tail` fields agree with the ProducerState and ConsumerState
-
-    #[invariant]
-    pub fn in_bounds(&self) -> bool {
-        0 <= self.head && self.head < self.len() &&
-        0 <= self.tail && self.tail < self.len()
-        && match self.producer {
-            ProducerState::Producing(tail) => {
-                self.tail == tail
-            }
-            ProducerState::Idle(tail) => {
-                self.tail == tail
-            }
-        }
-        && match self.consumer {
-            ConsumerState::Consuming(head) => {
-                self.head == head
-            }
-            ConsumerState::Idle(head) => {
-                self.head == head
-            }
-        }
-    }
-
-    // Indicates whether we expect the cell at index `i` to be full based on
-    // the values of the `head` and `tail`.
-
-    pub open spec fn in_active_range(&self, i: nat) -> bool {
-        // Note that self.head = self.tail means empty range
-        0 <= i && i < self.len() && (
-            if self.head <= self.tail {
-                self.head <= i && i < self.tail
-            } else {
-                i >= self.head || i < self.tail
-            }
-        )
-    }
-
-    // Indicates whether we expect a cell to be checked out or not,
-    // based on the producer/consumer state.
-
-    pub open spec fn is_checked_out(&self, i: nat) -> bool {
-        self.producer === ProducerState::Producing(i)
-        || self.consumer === ConsumerState::Consuming(i)
-    }
-
-    // Predicate to determine that the state at cell index `i`
-    // is correct. For each index, there are three possibilities:
-    //
-    //  1. No cell permission is stored
-    //  2. Permission is stored; permission indicates a full cell
-    //  3. Permission is stored; permission indicates an empty cell
-    //
-    // Which of these 3 possibilities we should be in depends on the
-    // producer/consumer/head/tail state.
-
-    pub open spec fn valid_storage_at_idx(&self, i: nat) -> bool {
-        if self.is_checked_out(i) {
-            // No cell permission is stored
-            !self.storage.dom().contains(i)
-        } else {
-            // Permission is stored
-            self.storage.dom().contains(i)
-
-            // Permission must be for the correct cell:
-            && self.storage.index(i)@.pcell === self.backing_cells.index(i as int)
-
-            && if self.in_active_range(i) {
-                // The cell is full
-                self.storage.index(i)@.value.is_Some()
-            } else {
-                // The cell is empty
-                self.storage.index(i)@.value.is_None()
-            }
-        }
-    }
-
-    #[invariant]
-    pub fn valid_storage_all(&self) -> bool {
-        forall|i: nat| 0 <= i && i < self.len() ==>
-            self.valid_storage_at_idx(i)
-    }
+    /////// Operations
 
     init!{
         initialize(backing_cells: Seq<CellId>, storage: Map<nat, cell::PointsTo<T>>) {
@@ -323,6 +212,120 @@ tokenized_state_machine!{FifoQueue<T> {
         }
     }
 
+    ///// Invariants
+
+    // Make sure the producer state and the consumer state aren't inconsistent.
+    #[invariant]
+    pub fn not_overlapping(&self) -> bool {
+        match (self.producer, self.consumer) {
+            (ProducerState::Producing(tail), ConsumerState::Idle(head)) => {
+                Self::inc_wrap(tail, self.len()) != head
+            }
+            (ProducerState::Producing(tail), ConsumerState::Consuming(head)) => {
+                head != tail
+                && Self::inc_wrap(tail, self.len()) != head
+            }
+            (ProducerState::Idle(tail), ConsumerState::Idle(head)) => {
+                true
+            }
+            (ProducerState::Idle(tail), ConsumerState::Consuming(head)) => {
+                head != tail
+            }
+        }
+    }
+
+    // `head` and `tail` are in-bounds
+    // shared `head` and `tail` fields agree with the ProducerState and ConsumerState
+    #[invariant]
+    pub fn in_bounds(&self) -> bool {
+        0 <= self.head && self.head < self.len() &&
+        0 <= self.tail && self.tail < self.len()
+        && match self.producer {
+            ProducerState::Producing(tail) => {
+                self.tail == tail
+            }
+            ProducerState::Idle(tail) => {
+                self.tail == tail
+            }
+        }
+        && match self.consumer {
+            ConsumerState::Consuming(head) => {
+                self.head == head
+            }
+            ConsumerState::Idle(head) => {
+                self.head == head
+            }
+        }
+    }
+
+    #[invariant]
+    pub fn valid_storage_all(&self) -> bool {
+        forall|i: nat| 0 <= i && i < self.len() ==>
+            self.valid_storage_at_idx(i)
+    }
+
+    // Misc. functions
+
+    pub open spec fn len(&self) -> nat {
+        self.backing_cells.len()
+    }
+
+    pub open spec fn inc_wrap(i: nat, len: nat) -> nat {
+        if i + 1 == len { 0 } else { i + 1 }
+    }
+
+    // Indicates whether we expect the cell at index `i` to be full based on
+    // the values of the `head` and `tail`.
+    pub open spec fn in_active_range(&self, i: nat) -> bool {
+        // Note that self.head = self.tail means empty range
+        0 <= i && i < self.len() && (
+            if self.head <= self.tail {
+                self.head <= i && i < self.tail
+            } else {
+                i >= self.head || i < self.tail
+            }
+        )
+    }
+
+    // Indicates whether we expect a cell to be checked out or not,
+    // based on the producer/consumer state.
+
+    pub open spec fn is_checked_out(&self, i: nat) -> bool {
+        self.producer === ProducerState::Producing(i)
+        || self.consumer === ConsumerState::Consuming(i)
+    }
+
+    // Predicate to determine that the state at cell index `i`
+    // is correct. For each index, there are three possibilities:
+    //
+    //  1. No cell permission is stored
+    //  2. Permission is stored; permission indicates a full cell
+    //  3. Permission is stored; permission indicates an empty cell
+    //
+    // Which of these 3 possibilities we should be in depends on the
+    // producer/consumer/head/tail state.
+
+    pub open spec fn valid_storage_at_idx(&self, i: nat) -> bool {
+        if self.is_checked_out(i) {
+            // No cell permission is stored
+            !self.storage.dom().contains(i)
+        } else {
+            // Permission is stored
+            self.storage.dom().contains(i)
+
+            // Permission must be for the correct cell:
+            && self.storage.index(i)@.pcell === self.backing_cells.index(i as int)
+
+            && if self.in_active_range(i) {
+                // The cell is full
+                self.storage.index(i)@.value.is_Some()
+            } else {
+                // The cell is empty
+                self.storage.index(i)@.value.is_None()
+            }
+        }
+    }
+
     #[inductive(initialize)]
     fn initialize_inductive(post: Self, backing_cells: Seq<CellId>, storage: Map<nat, cell::PointsTo<T>>) {
         assert forall|i: nat|
@@ -448,7 +451,7 @@ struct_with_invariants!{
             // The Cell IDs in the instance protocol match the cell IDs in the actual vector:
             &&& self.instance@.backing_cells().len() == self.buffer@.len()
             &&& forall|i: int| 0 <= i && i < self.buffer@.len() as int ==>
-                self.instance@.backing_cells().index(i) ===
+                #[trigger] self.instance@.backing_cells().index(i) ===
                     self.buffer@.index(i).id()
         }
 
