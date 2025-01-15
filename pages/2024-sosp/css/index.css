@@ -16,6 +16,19 @@ h1#title {
 span.name-span {
   font-weight: bold;
 }
+div.recording-wrapper {
+  border-left: 4px solid #666;
+  padding-left: 14px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+div.recording-thumbnails {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+div.recording-thumbnails img {
+  width: 200px;
+}
 @media screen and (min-width: 880px) {
   div.hero > div.main {
     width: 800px;
