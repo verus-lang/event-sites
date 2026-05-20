@@ -146,6 +146,7 @@ Rust/Verus syntax quick summary:
   - Rust integer types: u8, u16, u32, u64, u128, usize, i8, ..., isize
     - note: Rust uses usize to index into Vec, array
   - Verus integer types: int, nat
+  - Verus real number type: real
   - Rust shared reference types: &T
   - Rust mutable references types: &mut T
   - Rust growable vector types: Vec<T>
@@ -157,6 +158,7 @@ Rust/Verus syntax quick summary:
   - Verus boolean prefix operators: &&&, |||
   - Rust conditional expressions: if b { expr_true } else { expr_false }
   - Rust integer constants: 1, 2, 3, 1u32, 2int, 3usize, ...
+  - Verus real number constants: 1.0real, 0.5real, ...
   - Rust u8::MAX, usize::MAX, etc. is the largest possible u8 value, usize value, etc.
   - Rust integer arithmetic: +, -, <=, >=, <, >, *, /, %
   - Rust comparison operators: ==, !=
