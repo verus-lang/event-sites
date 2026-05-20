@@ -1,0 +1,199 @@
+Take your time with the exercises -- go at your pace, in whatever order you choose.
+(You aren't expected to finish all of them, just whichever ones you find interesting.)
+Hopefully, there are enough exercises supplied here so that no one runs out of things to do,
+but feel free to brainstorm your own exercises to work on if you want.
+
+There are two themes to the exercises:
+- ring buffer (described below)
+- concurrent atomic add ("count_to_2", described in the second lecture)
+Most of the exercises involve filling in missing invariants,
+which requires diagnosing why verification is failing to figure out what invariants are needed.
+Don't worry about spending too much time investigating a verification failure;
+learning *how* to investigate is the main point of the exercise,
+rather than finishing the exercise (the journey is more important than the destination).
+
+
+Ring buffer (a fixed-size queue common in operating systems):
+
+Example:
+    let mut r = RingBuffer::new();
+    r.push(100);
+    r.push(200);
+    r.push(300);
+    let x = r.pop();
+    assert(x == 100);
+    assert(r@ =~= seq![200, 300]);
+
+Initial state:
+
+     head=0
+     tail=0
+       |
+      \|/
+    
+    |-----|-----|-----|-----|-----|-----| .... |-----|
+
+Middle state after 3 pushes:
+
+     head=0            tail=3
+       |                 |
+      \|/               \|/
+    
+    |-100-|-200-|-300-|-----|-----|-----| .... |-----|
+
+Final state after pop:
+
+           head=1      tail=3
+             |           |
+            \|/         \|/
+    
+    |-----|-200-|-300-|-----|-----|-----| .... |-----|
+
+Each push increments tail.
+Each pop increments head.
+When tail or head reach the end of the buffer, they wrap around to 0.
+Because of this wrapping, it is natural to think in terms of mod ("%"):
+- head % (size_of_buffer)
+- tail % (size_of_buffer)
+However, it is more efficient for SMT solving to use + and - and <= and >= rather than %.
+(This is part of day 1's exercise.)
+
+
+Day 1:
+Main exercises:
+- ring.rs, a ring buffer containing up to 127 elements (each element has type u32)
+  - Goal: make RingBuffer128's new, push, pop verify by implementing both inv and view:
+    - define inv and view using mod 128: "expr % 128"
+    - "spec fn inv(&self)" (marked TODO)
+      - this is the well-formedness invariant that RingBuffer128 must satisfy at all times
+      - hint: try fixing "precondition not met: index in bounds for this access" first
+        (you'll need to say something about self.head and self.tail)
+      - hint: while starting out, it might be helpful to comment out postconditions or
+        even to write "assume(false);" in some places
+      - hint: while starting out, it might be helpful to assert properties you think should hold
+        ("assert(...property...)") to check that the SMT solver agrees that the property holds
+    - "spec fn view(&self) -> Seq<u32> { ... }" (marked TODO)
+      - this is the abstract sequence representing the contents of the queue
+      - hint: when self.tail == self.head, the Seq should have length 0
+      - hint: when self.tail == 3 and self.head == 1, the Seq should have length 2
+      - hint: the elements of the Seq can be computed from self.data
+      - hint: while starting out, it might be helpful to say "assume(self.head <= self.tail);"
+        or even say something like "assume(self.head == 1 && self.tail == 3);"
+- ring.rs additional exercises (any order):
+  - Goal: push_via_bitwise_and
+    - Fill in "assert(...) by(bit_vector);" (marked TODO) so that push_via_bitwise_and verifies
+    - hint: use the variable "next" and various operations on "next"
+  - Goal: reimplement inv and view *without* using "%"
+    - use + and - and comparisons (e.g. <=, >=)
+    - feel free to introduce additional spec functions to help with these definitions
+    - note: avoiding % usually leads to better SMT performance
+  - Goal: implement RingBuffer256 and new_from_smaller1 and new_from_smaller2, by filling in:
+    - inv (same way as for RingBuffer128)
+    - view (same way as for RingBuffer128)
+    - loop invariants in new_from_smaller1
+    - loop invariants in new_from_smaller2
+      - note: "verifier::loop_isolation(true)" tells Verus to verify the loop separately
+        from the rest of the function, giving the loop its own independent weakest precondition
+        (this can lead to better SMT performance, but often requires more loop invariants,
+        since there's no direct connection in the loop's weakest precondition to facts known
+        outside the loop, such as the function's "requires" clauses)
+Optional bonus exercises (any order):
+- ring_generic_vec.rs: makes ring.rs generic over the element type T via Vec<T>
+  - uses Default trait to fill in blank values in the buffer
+- ring_generic_array.rs: makes ring.rs generic over the element type T via array of T
+  - uses Option::None to fill in blank values in the buffer
+  - hint: use "expr is Some" or "expr.is_some()" to say that an Option<T> is Some, not None
+  - hint: use ".unwrap()" to convert an Option<T> to a T in a spec
+- ring_array_n.rs: generalizes ring.rs to be an N-element buffer
+  - strongly recommend *not* using "% N" operation, which is nonlinear arithmetic
+    (use + and - instead),
+    but if you want a masochistic challenge, you can try the proof in terms of "% N"
+    using assert by(nonlinear_arith) and the lemma library
+    https://verus-lang.github.io/verus/verusdoc/vstd/arithmetic/div_mod/index.html
+Extra bonus exercise:
+- Can AI help?
+- Can an AI agent finish the exercises on its own?
+  - note: these exact exercises have not been published before,
+    so LLMs haven't trained on them directly and haven't seen the answers,
+    but they have been trained on similar examples
+
+Day 2:
+In any order:
+- ring_raw_pointer.rs
+  This implements a ring buffer using unsafe raw pointer operations and raw memory allocation
+  - Goal 1: replace small_mod5's implementation of i % 5
+    with a definition based on + and - and <= and >= so that verifying push no longer times out
+    (if you want, you can temporarily mark push with "#[verifier::rlimit(100)]"
+    to see how slow the verification is)
+  - Goal 2: finish the implementation of pop (marked TODO)
+  - Goal 3: replace make_free_map with a recursive definition make_free_map_rec (marked TODO)
+- count_to_2.rs
+  This is the program described in the lecture,
+  where two threads each atomically add 1 to a counter,
+  so that the parent thread can assert that the final counter value is 2
+  - Goal: fill in missing invariants (marked TODO)
+Extra bonus exercise:
+- Can AI help?
+- Can an AI agent finish the exercises on its own?
+  - note: these exact exercises have not been published before,
+    so LLMs haven't trained on them directly and haven't seen the answers,
+    but they have been trained on similar examples
+
+
+Rust/Verus syntax quick summary:
+- types:
+  - Rust boolean type: bool
+  - Rust integer types: u8, u16, u32, u64, u128, usize, i8, ..., isize
+    - note: Rust uses usize to index into Vec, array
+  - Verus integer types: int, nat
+  - Rust shared reference types: &T
+  - Rust mutable references types: &mut T
+  - Rust growable vector types: Vec<T>
+  - Rust fixed-size array types: [T; size]
+  - Verus Seq<A>, Set<A>, Map<Key, Value>
+- expressions:
+  - Rust boolean infix operators: &&, ||
+  - Verus boolean infix operator: ==>
+  - Verus boolean prefix operators: &&&, |||
+  - Rust conditional expressions: if b { expr_true } else { expr_false }
+  - Rust integer constants: 1, 2, 3, 1u32, 2int, 3usize, ...
+  - Rust u8::MAX, usize::MAX, etc. is the largest possible u8 value, usize value, etc.
+  - Rust integer arithmetic: +, -, <=, >=, <, >, *, /, %
+  - Rust comparison operators: ==, !=
+  - Verus equality-by-extensionality: =~=
+  - Rust conversion between integer types: expr as type (e.g. (n - 1) as u32)
+  - Rust blocks (which can be inside expressions): { let x1 = expr1; ... ; let xn = exprn; expr }
+  - Rust closures: |x1: t1, ..., xn: tn| expr
+  - Verus proof blocks: proof { ... }
+  - Verus ghost variables: let ghost x = expr;
+  - Verus tracked (unforgeable, ownership-checked) ghost variables: let tracked x = expr;
+  - Verus "@" means ".view()"
+- Verus functions are "spec", "proof", or (by default) "exec"
+- Verus arbitrary::<T>() returns an arbitrary value of type T
+  - note: in spec code, Verus treats all types T as inhabited, using a "bottom" value if needed
+  - "arbitrary()" is not available for exec and tracked values
+- Verus Seq<A>
+  - Seq::new(size, |i: int| element_i)
+  - seq![element_0, ..., element_n]
+  - s.len()
+  - s[i]
+  - s.push(element)
+  - s.skip(number_of_elements)
+  - https://verus-lang.github.io/verus/verusdoc/vstd/seq/struct.Seq.html
+- Verus Set<A>
+  - Set::empty()
+  - s.contains(a)
+  - s.insert(a)
+  - https://verus-lang.github.io/verus/verusdoc/vstd/set/struct.Set.html
+- Verus Map<Key, Value>
+  - Map::empty()
+  - Map::tracked_empty()
+  - m.contains_key(key)
+  - m[key]
+  - m.tracked_insert(key, tracked_value)
+  - m.tracked_remove(key)
+  - https://verus-lang.github.io/verus/verusdoc/vstd/map/struct.Map.html
+- Verus Tracked<A> (used to pass tracked values as exec fn arguments or in exec structs)
+  - Tracked(expr)
+  - let Tracked(x) = expr
+  - "t@" to get ghost copy of value inside the Tracked
