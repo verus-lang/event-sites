@@ -140,6 +140,21 @@ Extra bonus exercise:
     but they have been trained on similar examples
 
 
+Verus command line quick summary:
+- verus --help
+- verus ring.rs
+- verus ring.rs --expand-errors
+  - (when verification fails, automatically recurse into conjunctions, functions, etc. to find finer-grained errors)
+- verus ring.rs --verify-root --verify-function push
+  - (verify just the push function)
+- verus ring.rs --log-all
+  - (generate AIR, SMT, etc. in .verus-log directory)
+
+Hints:
+- write "assert(...property...);" to check if the SMT solver can prove the property at a particular program point
+- write "assume(false);" to temporarily ignore verification of subsequent code
+- write "assume(...conditions...);" to temporarily focus on a particlar case (e.g. self.head == 0 && self.tail == 0)
+
 Rust/Verus syntax quick summary:
 - types:
   - Rust boolean type: bool
