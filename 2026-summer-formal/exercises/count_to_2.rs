@@ -68,11 +68,9 @@ fn main() {
             let ptr = ptr_a;
 
             open_atomic_invariant!(shared_atomic_inv.borrow() => count_state => {
-                proof {
-                    count_state.inv_frac_a.combine(thread_frac_a);
-                }
                 ptr.fetch_add(Tracked(&mut count_state.atomicu32_perm), 1);
                 proof {
+                    count_state.inv_frac_a.combine(thread_frac_a);
                     count_state.inv_frac_a.update(1);
                     thread_frac_a = count_state.inv_frac_a.split();
                 }
@@ -94,11 +92,9 @@ fn main() {
             let ptr = ptr_b;
 
             open_atomic_invariant!(shared_atomic_inv.borrow() => count_state => {
-                proof {
-                    count_state.inv_frac_b.combine(thread_frac_b);
-                }
                 ptr.fetch_add(Tracked(&mut count_state.atomicu32_perm), 1);
                 proof {
+                    count_state.inv_frac_b.combine(thread_frac_b);
                     count_state.inv_frac_b.update(1);
                     thread_frac_b = count_state.inv_frac_b.split();
                 }
