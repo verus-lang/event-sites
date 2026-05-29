@@ -25,8 +25,8 @@ type AtomicInv<State> = AtomicInvariant<spec_fn(State) -> bool, State, State>;
 
 fn main() {
     // Integer fractions
-    let tracked inv_frac_a: FracGhost<int> = FracGhost::new(0);
-    let tracked inv_frac_b: FracGhost<int> = FracGhost::new(0);
+    let tracked mut inv_frac_a: FracGhost<int> = FracGhost::new(0);
+    let tracked mut inv_frac_b: FracGhost<int> = FracGhost::new(0);
     let tracked thread_frac_a = inv_frac_a.split();
     let tracked thread_frac_b = inv_frac_b.split();
 
