@@ -33,7 +33,6 @@ verus!{
 
         assert(w@ =~= seq![4, 6, 8, 10]);
     }
-
-
-
 }
+
+    fn main() { }

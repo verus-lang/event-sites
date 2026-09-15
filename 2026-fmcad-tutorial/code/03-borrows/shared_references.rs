@@ -23,3 +23,5 @@ fn maximum_references(a: &u64, b: &u64) -> (max: u64)
 }
 
 }
+
+fn main() { }

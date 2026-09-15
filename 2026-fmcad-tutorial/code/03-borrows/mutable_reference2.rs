@@ -71,3 +71,5 @@ fn vec_index_mut_test() {
 }
 
 }
+
+fn main() { }

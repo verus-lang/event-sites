@@ -11,3 +11,5 @@ fn example() {
 }
 
 }
+
+fn main() { }

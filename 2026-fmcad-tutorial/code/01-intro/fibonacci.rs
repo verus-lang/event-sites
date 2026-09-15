@@ -39,5 +39,6 @@ exec fn fibonacci_impl(n: u64) -> (result: u64)
 }
 
 
-
 }
+
+fn main() { }

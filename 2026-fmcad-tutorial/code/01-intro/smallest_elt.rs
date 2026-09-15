@@ -1,3 +1,5 @@
+#![verifier::exec_allows_no_decreases_clause]
+
 use vstd::prelude::*;
 verus!{
 
